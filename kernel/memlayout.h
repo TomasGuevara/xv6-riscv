@@ -57,3 +57,6 @@
 //   TRAPFRAME (p->trapframe, used by the trampoline)
 //   TRAMPOLINE (the same page as in the kernel)
 #define TRAPFRAME (TRAMPOLINE - PGSIZE)
+#define PHYS_SIZE (PHYSTOP - KERNBASE)
+#define NPAGES (PHYS_SIZE / PGSIZE)
+#define PA2IDX(pa) (((pa) - KERNBASE) / PGSIZE)
