@@ -14,6 +14,7 @@ void freerange(void *pa_start, void *pa_end);
 extern char end[]; // first address after kernel.
                    // defined by kernel.ld.
 
+// Array that stores the reference count for each physical page.
 int refcnt[NPAGES];
 
 struct run {
@@ -25,6 +26,7 @@ struct {
   struct run *freelist;
 } kmem;
 
+// Initialization of the reference count and physical memory pages
 void
 kinit()
 {
@@ -49,6 +51,12 @@ freerange(void *pa_start, void *pa_end)
 // which normally should have been returned by a
 // call to kalloc().  (The exception is when
 // initializing the allocator; see kinit above.)
+// In addition, the system checks for cases where
+// If the page is still shared (refcount > 1),
+// only decrement the refcount and do not return
+// it to the free list.
+// If this is the last reference (refcount == 1),
+// the page is actually freed and returned to the allocator.
 void
 kfree(void *pa)
 {
@@ -82,6 +90,7 @@ kfree(void *pa)
 }
 
 // Allocate one 4096-byte page of physical memory.
+// In addition, the reference count becomes 1.
 // Returns a pointer that the kernel can use.
 // Returns 0 if the memory cannot be allocated.
 void *
@@ -102,12 +111,14 @@ kalloc(void)
   return (void*)r;
 }
 
+// Returns the phisical page refcount
 int
 getref(uint64 pa)
 {
   return refcnt[PA2IDX(pa)];
 }
 
+// Increase the phisical page refcount
 void
 incref(uint64 pa)
 {
