@@ -70,6 +70,10 @@ usertrap(void)
     // ok
 
   } else if(r_scause() == 13){
+    // Handle a load page fault (read access).
+    // If the faulting page is marked as COW, resolve it using cowfault.
+    // Otherwise, delegate to vmfault to handle regular page faults.
+    // If the address is invalid or cannot be handled, the process is killed.
     uint64 va = r_stval();
     va = PGROUNDDOWN(va);
 
@@ -88,6 +92,11 @@ usertrap(void)
     }
 
   } else if(r_scause() == 15) {
+    // Handle a store page fault (write access).
+    // If the page is marked as COW, perform copy-on-write.
+    // A message is printed only if a new page is actually copied.
+    // Otherwise, handle it as a normal page fault using vmfault.
+    // Invalid accesses result in the process being killed.
     uint64 va = r_stval();
     va = PGROUNDDOWN(va);
 
